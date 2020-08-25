@@ -1,12 +1,12 @@
 #import dependencies
 import numpy as np
-import panda as pd
-import datetime at dt
+import pandas as pd
+import datetime as dt
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
-from sqlaclhemy.orm import Session
+from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
-from flask import Flask
+from flask import Flask, jsonify
 
 engine=create_engine("sqlite:///Resources/hawaii.sqlite")
 
@@ -18,7 +18,7 @@ Base.prepare(engine, reflect=True)
 
 #Put the references in table
 Measurement=Base.classes.measurement
-Station=Base.classes.Station
+Station=Base.classes.station
 
 #Creating the app
 app=Flask(__name__)
@@ -36,9 +36,9 @@ def home():
     )
 
 #defing the app when the user hits the precipitation route
-@app.route("/api/v1.0/preciptiation")
-def precipitation:
-    session=Session.bind_engine
+@app.route("/api/v1.0/precipitation")
+def precipitation():
+    session=Session(bind=engine)
 
     precip=session.query(Measurement.date, Measurement.prcp).all()
 
@@ -56,29 +56,30 @@ def precipitation:
 
 #defining the app when the user hits the station route
 @app.route("/api/v1.0/stations")
-def station:
-    session=Session.bind_engine
+def stations():
+    session=Session(bind=engine)
 
     station=session.query(Station.station).all()
 
     session.close()
 
-    session_list=[r[0] for r in stations]
+    station_list=[r[0] for r in station]
 
     return jsonify(station_list)
 
 #defining the app when the user hits the tobs route
 @app.route("/api/v1.0/tobs")
-def tobs:
+def temperature():
     session=Session(engine)
 
     last_day=dt.date(int(max(session.query(Measurement.date).all())[0][:4]),
                  int(max(session.query(Measurement.date).all())[0][5:7]),
-                 int(max(session.query(Measurement.date).all()[0][8:]))
-    last_year=last_day-dt.timedelta(dasy=365)
+                 int(max(session.query(Measurement.date).all())[0][8:]))
 
-    temps=session.query(Measurement.tobs).filter(Measure.station=="USC00519281").\
-                                      filter(Measurement.date>=last_year.strftime(%Y-%m-%d)).\
+    last_year=last_day-dt.timedelta(days=365)
+
+    temps=session.query(Measurement.tobs).filter(Measurement.station=="USC00519281").\
+                                      filter(Measurement.date>=last_year.strftime("%Y-%m-%d")).\
                                       order_by(Measurement.date).all()
 
     session.close()
@@ -86,3 +87,33 @@ def tobs:
     return jsonify(temps)
 
 #defining the app when the user hits start date
+@app.route("/api/v1.0/<start>")
+def weather_report(start):
+    session=Session(engine)
+
+    (TMIN, TAVG, TMAX)= session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+                                  filter(Measurement.date >=start).first()
+    
+    session.close()
+
+    temp_avg=[TMIN, TAVG, TMAX]
+
+    return jsonify(temp_avg)
+
+#defining the app when the user hits a range date
+@app.route("/api/v1.0/<start>/<end>")
+def range_weather_report(start, end):
+    session=Session(engine)
+
+    (TMIN, TAVG, TMAX)= session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+                                  filter(Measurement.date >=start).\
+                                  filter(Measurement.date <=end).first()
+    
+    session.close()
+
+    temp_avg=[TMIN, TAVG, TMAX]
+
+    return jsonify(temp_avg)
+
+if __name__=="__main__":
+    app.run(debug=True)
