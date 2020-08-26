@@ -31,8 +31,8 @@ def home():
            f"/api/v1.0/precipitation<br/>"
            f"/api/v1.0/stations<br/>"
            f"/api/v1.0/tobs<br/>"
-           f"/api/v1.0/yyyy-mm-dd<br/>"
-           f"/api/v1.0/yyyy-mm-dd/yyyy-mm-dd"
+           f"/api/v1.0/start<br/>"
+           f"/api/v1.0/start/end<br/>"
     )
 
 #defing the app when the user hits the precipitation route
