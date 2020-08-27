@@ -88,30 +88,30 @@ def temperature():
 
 #defining the app when the user hits start date
 @app.route("/api/v1.0/<start>")
-def weather_report(start):
+def weather_report(start=None):
     session=Session(engine)
 
-    (TMIN, TAVG, TMAX)= session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-                                  filter(Measurement.date >=start).first()
+    results= session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+                                  filter(Measurement.date >=start).all()
     
     session.close()
 
-    temp_avg=[TMIN, TAVG, TMAX]
+    temp_avg=list(np.ravel(results))
 
     return jsonify(temp_avg)
 
 #defining the app when the user hits a range date
 @app.route("/api/v1.0/<start>/<end>")
-def range_weather_report(start, end):
+def range_weather_report(start=None, end=None):
     session=Session(engine)
 
-    (TMIN, TAVG, TMAX)= session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+    results= session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
                                   filter(Measurement.date >=start).\
-                                  filter(Measurement.date <=end).first()
+                                  filter(Measurement.date <=end).all()
     
     session.close()
 
-    temp_avg=[TMIN, TAVG, TMAX]
+    temp_avg=list(np.ravel(results))
 
     return jsonify(temp_avg)
 
